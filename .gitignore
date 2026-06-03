@@ -1,0 +1,16 @@
+# Data files (too large for GitHub)
+data/telco_churn.csv
+data/churn.db
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# VS Code settings
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db

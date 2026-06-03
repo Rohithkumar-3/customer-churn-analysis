@@ -1,0 +1,141 @@
+# %%
+# ---- IMPORTS ----
+import pandas as pd
+import sqlite3
+import matplotlib.pyplot as plt
+import seaborn as sns
+import os
+
+os.makedirs('../outputs', exist_ok=True)
+sns.set_theme(style="whitegrid")
+
+# %%
+# ---- LOAD DATA ----
+conn = sqlite3.connect('../data/churn.db')
+df = pd.read_sql_query("SELECT * FROM customers", conn)
+print("Shape:", df.shape)
+print(df.dtypes)
+
+# %%
+# ---- DATA CLEANING ----
+
+# Check missing values
+print("Missing values:\n", df.isnull().sum())
+
+# TotalCharges has spaces instead of nulls — fix it
+df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce')
+
+# Drop the ~11 rows with null TotalCharges
+df.dropna(subset=['TotalCharges'], inplace=True)
+
+# Convert SeniorCitizen from 0/1 to Yes/No (more readable)
+df['SeniorCitizen'] = df['SeniorCitizen'].map({0: 'No', 1: 'Yes'})
+
+# Confirm clean
+print("After cleaning — missing values:\n", df.isnull().sum())
+print("Final shape:", df.shape)
+
+# %%
+# ---- SAVE CLEAN DATA BACK TO DB ----
+df.to_sql('customers_clean', conn, if_exists='replace', index=False)
+print("Clean table saved!")
+
+# %%
+# ---- EDA CHART 1: Overall churn distribution ----
+fig, ax = plt.subplots(figsize=(6, 4))
+churn_counts = df['Churn'].value_counts()
+ax.bar(churn_counts.index, churn_counts.values, color=['#4CAF50', '#F44336'], width=0.4)
+ax.set_title('Overall churn distribution')
+ax.set_ylabel('Number of customers')
+for i, v in enumerate(churn_counts.values):
+    ax.text(i, v + 50, str(v), ha='center', fontweight='bold')
+plt.tight_layout()
+plt.savefig('../outputs/01_churn_distribution.png', dpi=150)
+plt.show()
+print("Insight: ~26% of customers churned — class imbalance to handle in ML step.")
+
+# %%
+# ---- EDA CHART 2: Churn by contract type ----
+fig, ax = plt.subplots(figsize=(7, 4))
+contract_churn = df.groupby('Contract')['Churn'].apply(
+    lambda x: (x == 'Yes').sum() / len(x) * 100).reset_index()
+contract_churn.columns = ['Contract', 'Churn Rate %']
+sns.barplot(data=contract_churn, x='Contract', y='Churn Rate %', palette='Reds_r', ax=ax)
+ax.set_title('Churn rate by contract type')
+ax.set_ylabel('Churn rate (%)')
+for p in ax.patches:
+    ax.annotate(f'{p.get_height():.1f}%', (p.get_x() + p.get_width()/2, p.get_height() + 0.5),
+                ha='center', fontsize=10)
+plt.tight_layout()
+plt.savefig('../outputs/02_churn_by_contract.png', dpi=150)
+plt.show()
+print("Insight: Month-to-month customers churn at 43% vs 3% for two-year contracts.")
+
+# %%
+# ---- EDA CHART 3: Churn by tenure bucket ----
+df['tenure_group'] = pd.cut(df['tenure'], bins=[0,12,24,48,72],
+                             labels=['0-12 mo', '13-24 mo', '25-48 mo', '49-72 mo'])
+fig, ax = plt.subplots(figsize=(7, 4))
+tenure_churn = df.groupby('tenure_group', observed=True)['Churn'].apply(
+    lambda x: (x=='Yes').sum()/len(x)*100).reset_index()
+tenure_churn.columns = ['Tenure Group', 'Churn Rate %']
+sns.barplot(data=tenure_churn, x='Tenure Group', y='Churn Rate %', palette='Blues_r', ax=ax)
+ax.set_title('Churn rate by customer tenure')
+ax.set_ylabel('Churn rate (%)')
+for p in ax.patches:
+    ax.annotate(f'{p.get_height():.1f}%', (p.get_x() + p.get_width()/2, p.get_height() + 0.5),
+                ha='center', fontsize=10)
+plt.tight_layout()
+plt.savefig('../outputs/03_churn_by_tenure.png', dpi=150)
+plt.show()
+print("Insight: New customers (0-12 months) churn at nearly 3x the rate of long-term ones.")
+
+# %%
+# ---- EDA CHART 4: Monthly charges — churned vs retained ----
+fig, ax = plt.subplots(figsize=(7, 4))
+sns.boxplot(data=df, x='Churn', y='MonthlyCharges', palette={'Yes':'#F44336','No':'#4CAF50'}, ax=ax)
+ax.set_title('Monthly charges: churned vs retained customers')
+ax.set_ylabel('Monthly charges ($)')
+plt.tight_layout()
+plt.savefig('../outputs/04_monthly_charges_boxplot.png', dpi=150)
+plt.show()
+print("Insight: Churned customers pay significantly higher monthly charges on average.")
+
+# %%
+# ---- EDA CHART 5: Churn by payment method ----
+fig, ax = plt.subplots(figsize=(8, 4))
+pay_churn = df.groupby('PaymentMethod')['Churn'].apply(
+    lambda x: (x=='Yes').sum()/len(x)*100).reset_index()
+pay_churn.columns = ['Payment Method', 'Churn Rate %']
+pay_churn = pay_churn.sort_values('Churn Rate %', ascending=False)
+sns.barplot(data=pay_churn, x='Payment Method', y='Churn Rate %', palette='Oranges_r', ax=ax)
+ax.set_title('Churn rate by payment method')
+ax.set_xticklabels(ax.get_xticklabels(), rotation=15, ha='right')
+for p in ax.patches:
+    ax.annotate(f'{p.get_height():.1f}%', (p.get_x() + p.get_width()/2, p.get_height() + 0.5),
+                ha='center', fontsize=10)
+plt.tight_layout()
+plt.savefig('../outputs/05_churn_by_payment.png', dpi=150)
+plt.show()
+print("Insight: Electronic check users churn at 45% — highest of all payment methods.")
+
+# %%
+# ---- EDA CHART 6: Correlation heatmap ----
+numeric_df = df[['tenure', 'MonthlyCharges', 'TotalCharges']].copy()
+numeric_df['Churn_flag'] = (df['Churn'] == 'Yes').astype(int)
+fig, ax = plt.subplots(figsize=(6, 4))
+sns.heatmap(numeric_df.corr(), annot=True, fmt='.2f', cmap='coolwarm', ax=ax)
+ax.set_title('Correlation heatmap')
+plt.tight_layout()
+plt.savefig('../outputs/06_correlation_heatmap.png', dpi=150)
+plt.show()
+print("Insight: Tenure is negatively correlated with churn — longer customers stay longer.")
+
+# %%
+print("\n✅ All charts saved to /outputs folder!")
+print("Key business insights summary:")
+print("1. Month-to-month contracts = highest churn risk (43%)")
+print("2. New customers (0-12 months) are most vulnerable")
+print("3. High monthly charges correlate with churn")
+print("4. Electronic check users churn most")
+print("5. Tenure is the strongest retention signal")

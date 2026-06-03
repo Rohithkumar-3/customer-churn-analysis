@@ -1,0 +1,62 @@
+# %%
+# ---- IMPORTS ----
+import pandas as pd
+import sqlite3
+
+conn = sqlite3.connect('../data/churn.db')
+
+# %%
+# ---- EXPORT MAIN CLEAN DATA ----
+df = pd.read_sql_query("SELECT * FROM customers_clean", conn)
+df.to_csv('../outputs/customers_clean.csv', index=False)
+print("Main data exported:", len(df), "rows")
+
+# %%
+# ---- EXPORT SUMMARY TABLES (Power BI works best with pre-aggregated tables) ----
+
+# Churn by contract
+contract = df.groupby('Contract').agg(
+    total=('Churn', 'count'),
+    churned=('Churn', lambda x: (x=='Yes').sum())
+).reset_index()
+contract['churn_rate'] = (contract['churned'] / contract['total'] * 100).round(2)
+contract.to_csv('../outputs/churn_by_contract.csv', index=False)
+
+# Churn by payment method
+payment = df.groupby('PaymentMethod').agg(
+    total=('Churn', 'count'),
+    churned=('Churn', lambda x: (x=='Yes').sum())
+).reset_index()
+payment['churn_rate'] = (payment['churned'] / payment['total'] * 100).round(2)
+payment.to_csv('../outputs/churn_by_payment.csv', index=False)
+
+# Churn by tenure group
+df['tenure_group'] = pd.cut(df['tenure'], bins=[0,12,24,48,72],
+                             labels=['0-12 mo','13-24 mo','25-48 mo','49-72 mo'])
+tenure = df.groupby('tenure_group', observed=True).agg(
+    total=('Churn', 'count'),
+    churned=('Churn', lambda x: (x=='Yes').sum())
+).reset_index()
+tenure['churn_rate'] = (tenure['churned'] / tenure['total'] * 100).round(2)
+tenure.to_csv('../outputs/churn_by_tenure.csv', index=False)
+
+# Churn by internet service
+internet = df.groupby('InternetService').agg(
+    total=('Churn', 'count'),
+    churned=('Churn', lambda x: (x=='Yes').sum())
+).reset_index()
+internet['churn_rate'] = (internet['churned'] / internet['total'] * 100).round(2)
+internet.to_csv('../outputs/churn_by_internet.csv', index=False)
+
+# At-risk customers
+at_risk = pd.read_csv('../outputs/at_risk_customers.csv')
+at_risk.to_csv('../outputs/at_risk_customers.csv', index=False)
+
+print("✅ All files exported to /outputs folder!")
+print("Files ready for Power BI:")
+print("  - customers_clean.csv")
+print("  - churn_by_contract.csv")
+print("  - churn_by_payment.csv")
+print("  - churn_by_tenure.csv")
+print("  - churn_by_internet.csv")
+print("  - at_risk_customers.csv")

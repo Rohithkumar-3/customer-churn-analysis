@@ -1,0 +1,139 @@
+# %%
+# ---- IMPORTS ----
+import pandas as pd
+import sqlite3
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import (classification_report, confusion_matrix,
+                             roc_auc_score, roc_curve)
+import warnings
+warnings.filterwarnings('ignore')
+import os
+os.makedirs('../outputs', exist_ok=True)
+
+# %%
+# ---- LOAD CLEAN DATA ----
+conn = sqlite3.connect('../data/churn.db')
+df = pd.read_sql_query("SELECT * FROM customers_clean", conn)
+print("Shape:", df.shape)
+
+# %%
+# ---- ENCODE CATEGORICAL COLUMNS ----
+df_model = df.copy()
+
+# Drop columns not useful for prediction
+df_model.drop(columns=['customerID', 'tenure_group'], inplace=True, errors='ignore')
+
+# Encode all object columns using LabelEncoder
+le = LabelEncoder()
+for col in df_model.select_dtypes(include='object').columns:
+    df_model[col] = le.fit_transform(df_model[col])
+
+print("Encoded shape:", df_model.shape)
+print(df_model.head())
+
+# %%
+# ---- SPLIT FEATURES & TARGET ----
+X = df_model.drop(columns=['Churn'])
+y = df_model['Churn']
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y)
+
+print("Train size:", X_train.shape, "| Test size:", X_test.shape)
+
+# %%
+# ---- MODEL 1: LOGISTIC REGRESSION ----
+lr = LogisticRegression(max_iter=1000, random_state=42)
+lr.fit(X_train, y_train)
+lr_preds = lr.predict(X_test)
+lr_proba = lr.predict_proba(X_test)[:, 1]
+
+print("=== Logistic Regression ===")
+print(classification_report(y_test, lr_preds, target_names=['Retained', 'Churned']))
+print("AUC-ROC:", round(roc_auc_score(y_test, lr_proba), 4))
+
+# %%
+# ---- MODEL 2: RANDOM FOREST ----
+rf = RandomForestClassifier(n_estimators=100, random_state=42)
+rf.fit(X_train, y_train)
+rf_preds = rf.predict(X_test)
+rf_proba = rf.predict_proba(X_test)[:, 1]
+
+print("=== Random Forest ===")
+print(classification_report(y_test, rf_preds, target_names=['Retained', 'Churned']))
+print("AUC-ROC:", round(roc_auc_score(y_test, rf_proba), 4))
+
+# %%
+# ---- CHART 1: ROC CURVE (both models) ----
+fig, ax = plt.subplots(figsize=(7, 5))
+
+fpr_lr, tpr_lr, _ = roc_curve(y_test, lr_proba)
+fpr_rf, tpr_rf, _ = roc_curve(y_test, rf_proba)
+
+ax.plot(fpr_lr, tpr_lr, label=f'Logistic Regression (AUC = {roc_auc_score(y_test, lr_proba):.2f})', color='#2196F3')
+ax.plot(fpr_rf, tpr_rf, label=f'Random Forest (AUC = {roc_auc_score(y_test, rf_proba):.2f})', color='#F44336')
+ax.plot([0,1],[0,1], 'k--', alpha=0.4)
+ax.set_xlabel('False positive rate')
+ax.set_ylabel('True positive rate')
+ax.set_title('ROC curve — model comparison')
+ax.legend()
+plt.tight_layout()
+plt.savefig('../outputs/07_roc_curve.png', dpi=150)
+plt.show()
+
+# %%
+# ---- CHART 2: Confusion matrix (Random Forest) ----
+fig, ax = plt.subplots(figsize=(5, 4))
+cm = confusion_matrix(y_test, rf_preds)
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
+            xticklabels=['Retained','Churned'],
+            yticklabels=['Retained','Churned'], ax=ax)
+ax.set_title('Confusion matrix — Random Forest')
+ax.set_ylabel('Actual')
+ax.set_xlabel('Predicted')
+plt.tight_layout()
+plt.savefig('../outputs/08_confusion_matrix.png', dpi=150)
+plt.show()
+
+# %%
+# ---- CHART 3: Feature importance (the "wow" chart) ----
+feat_imp = pd.DataFrame({
+    'Feature': X.columns,
+    'Importance': rf.feature_importances_
+}).sort_values('Importance', ascending=False).head(10)
+
+fig, ax = plt.subplots(figsize=(8, 5))
+sns.barplot(data=feat_imp, x='Importance', y='Feature', palette='Reds_r', ax=ax)
+ax.set_title('Top 10 features driving churn (Random Forest)')
+ax.set_xlabel('Importance score')
+plt.tight_layout()
+plt.savefig('../outputs/09_feature_importance.png', dpi=150)
+plt.show()
+print("Insight: These are the top factors that predict whether a customer will churn.")
+
+# %%
+# ---- SAVE AT-RISK CUSTOMERS ----
+# Add churn probability to original dataframe
+original = pd.read_sql_query("SELECT * FROM customers_clean", conn)
+original['churn_probability'] = rf.predict_proba(X)[:, 1]
+original['churn_probability'] = original['churn_probability'].round(3)
+
+# Flag high risk (>70% probability)
+at_risk = original[original['churn_probability'] > 0.7].sort_values(
+    'churn_probability', ascending=False)
+
+at_risk.to_csv('../outputs/at_risk_customers.csv', index=False)
+print(f"At-risk customers saved: {len(at_risk)} customers flagged")
+print(at_risk[['customerID','Contract','MonthlyCharges','tenure','churn_probability']].head(10))
+
+# %%
+print("\n✅ Step 3 complete!")
+print("Model summary:")
+print(f"  Logistic Regression AUC: {roc_auc_score(y_test, lr_proba):.4f}")
+print(f"  Random Forest AUC:       {roc_auc_score(y_test, rf_proba):.4f}")
+print("  Winner: Random Forest — use this for the dashboard")
