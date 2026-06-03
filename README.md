@@ -120,13 +120,6 @@ python powerbi_export.py
 **4. Open dashboard**
 Open `churn_dashboard.pbix` in Power BI Desktop.
 
----
-
-## 📸 Dashboard Preview
-
-> Add screenshots of your 3 Power BI pages here after publishing.
-
----
 
 ## 📬 Contact
 
