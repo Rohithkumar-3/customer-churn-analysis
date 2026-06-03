@@ -18,14 +18,14 @@ A telecom company is losing customers every month. The goal is to:
 churn_project/
 │
 ├── data/                        # Raw and cleaned data
-│   ├── telco_churn.csv          # Original Kaggle dataset
-│   └── churn.db                 # SQLite database
+│   ├── churn_by_contract.csv
+│  
 │
 ├── scripts/                     # Python analysis scripts
-│   ├── step1_setup.py           # Data loading & SQL queries
-│   ├── step2_eda.py             # Data cleaning & EDA charts
-│   ├── step3_model.py           # ML churn prediction model
-│   └── step4_export.py          # Export CSVs for Power BI
+│   ├──setup.py                  # Data loading & SQL queries
+│   ├── datacleaning_eda.py      # Data cleaning & EDA charts
+│   ├── model.py                 # ML churn prediction model
+│   └── powerbi_export.py        # Export CSVs for Power BI
 │
 ├── outputs/                     # All generated outputs
 │   ├── customers_clean.csv
@@ -35,8 +35,8 @@ churn_project/
 │   ├── churn_by_internet.csv
 │   ├── at_risk_customers.csv    # High-risk customers flagged
 │   └── *.png                    # EDA & model charts
-│
-├── churn_dashboard.pbix         # Power BI dashboard (3 pages)
+├── Dashboard/  
+|    |── churn_dashboard.pbix    # Power BI dashboard (3 pages)
 ├── requirements.txt             # Python dependencies
 └── README.md
 ```
@@ -111,10 +111,10 @@ pip install -r requirements.txt
 **3. Run scripts in order**
 ```bash
 cd scripts
-python step1_setup.py
-python step2_eda.py
-python step3_model.py
-python step4_export.py
+python setup.py
+python datacleaning_eda.py
+python mlmodel.py
+python powerbi_export.py
 ```
 
 **4. Open dashboard**
@@ -130,10 +130,10 @@ Open `churn_dashboard.pbix` in Power BI Desktop.
 
 ## 📬 Contact
 
-**Your Name**
-📧 your.email@gmail.com
-🔗 [LinkedIn](https://linkedin.com/in/yourprofile)
-💻 [GitHub](https://github.com/yourusername)
+Rohith Kumar V
+📧 mail.rohithkumar@gmail.com
+🔗 [LinkedIn](https://www.linkedin.com/in/rohith-kumar-rk/)
+💻 [GitHub](https://github.com/Rohithkumar-3)
 
 ---
 
