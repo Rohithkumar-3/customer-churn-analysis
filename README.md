@@ -1,133 +1,148 @@
-# 📊 Customer Churn Analysis & Prediction
+# Customer Churn Analysis & Prediction
 
-An end-to-end data analyst project analyzing customer churn for a telecom company using Python, SQL, and Power BI.
+A data analytics project that explores customer churn in the telecom industry using Python, SQL, machine learning, and Power BI.
 
----
+The idea behind this project is simple: understand why customers leave a telecom service, identify the factors associated with churn, and use historical customer data to predict which customers may be at risk of leaving.
 
-## 🎯 Problem Statement
-A telecom company is losing customers every month. The goal is to:
-- Identify **why** customers are churning
-- Predict **which** customers are likely to churn next
-- Provide **actionable recommendations** to reduce churn
+## About the Project
 
----
+Customer churn is a common problem for telecom companies. Losing customers affects revenue, and acquiring new customers can be more expensive than retaining existing ones.
 
-## 📁 Project Structure
+In this project, I worked with telecom customer data to explore churn patterns, compare different customer groups, and build a machine learning model to identify customers who may be more likely to leave.
 
-```
+The analysis covers customer contracts, tenure, payment methods, internet services, and monthly charges. The results are also presented in a Power BI dashboard to make the findings easier to understand.
+
+## Tools Used
+
+- **Python:** Data cleaning, exploratory data analysis, and model development
+- **Pandas & NumPy:** Data manipulation and preparation
+- **SQL & SQLite:** Data storage, querying, and aggregation
+- **Matplotlib & Seaborn:** Charts and data visualization
+- **Scikit-learn:** Training and evaluating machine learning models
+- **Power BI:** Interactive dashboard development
+
+## Project Structure
+
+```text
 churn_project/
 │
-├── data/                        # Raw and cleaned data
-│   ├── churn_by_contract.csv
-│  
+├── data/
+│   └── churn_by_contract.csv
 │
-├── scripts/                     # Python analysis scripts
-│   ├──setup.py                  # Data loading & SQL queries
-│   ├── datacleaning_eda.py      # Data cleaning & EDA charts
-│   ├── model.py                 # ML churn prediction model
-│   └── powerbi_export.py        # Export CSVs for Power BI
+├── scripts/
+│   ├── setup.py
+│   ├── datacleaning_eda.py
+│   ├── model.py
+│   └── powerbi_export.py
 │
-├── outputs/                     # All generated outputs
+├── outputs/
 │   ├── customers_clean.csv
 │   ├── churn_by_contract.csv
 │   ├── churn_by_payment.csv
 │   ├── churn_by_tenure.csv
 │   ├── churn_by_internet.csv
-│   ├── at_risk_customers.csv    # High-risk customers flagged
-│   └── *.png                    # EDA & model charts
-├── Dashboard/  
-|    |── churn_dashboard.pbix    # Power BI dashboard (3 pages)
-├── requirements.txt             # Python dependencies
+│   ├── at_risk_customers.csv
+│   └── *.png
+│
+├── Dashboard/
+│   └── churn_dashboard.pbix
+│
+├── requirements.txt
 └── README.md
 ```
 
----
+The scripts handle different stages of the workflow, from preparing the data to generating analysis outputs and exporting data for Power BI.
 
-## 🛠️ Tools & Technologies
+## What I Found in the Data
 
-| Category | Tools |
-|----------|-------|
-| Language | Python 3.x |
-| Data manipulation | Pandas, NumPy |
-| Database | SQLite, SQL |
-| Visualization | Matplotlib, Seaborn |
-| Machine learning | Scikit-learn |
-| Dashboard | Microsoft Power BI |
-| IDE | VS Code |
+A few patterns stood out during the analysis:
 
----
+- **Contract type:** Month-to-month customers had a churn rate of around 43%, compared with approximately 3% for customers on two-year contracts.
+- **Customer tenure:** Customers in their first year showed a higher tendency to churn than customers who had stayed for longer.
+- **Payment method:** Customers paying through electronic checks had the highest churn rate, at around 45%.
+- **Monthly charges:** Customers who left were paying approximately $74 per month on average, compared with $61 among customers who stayed.
 
-## 📊 Key Findings
+These patterns suggest that contract flexibility, the early customer experience, payment preferences, and monthly costs may all be useful areas to investigate when trying to understand churn.
 
-| Finding | Insight |
-|---------|---------|
-| 📌 Contract type | Month-to-month customers churn at **43%** vs only **3%** for two-year contracts |
-| 📌 Tenure | New customers (0–12 months) churn at **3x the rate** of long-term customers |
-| 📌 Payment method | Electronic check users have the highest churn rate at **45%** |
-| 📌 Monthly charges | Churned customers pay **$74/mo on average** vs $61 for retained customers |
+*Note: These figures should be verified against the dataset and the final analysis outputs before being treated as confirmed results.*
 
----
+## Churn Prediction Model
 
-## 🤖 Model Performance
+I compared two classification models to see how well they could identify customers likely to churn.
 
-| Model | AUC-ROC | Precision | Recall |
-|-------|---------|-----------|--------|
+| Model | ROC-AUC | Precision | Recall |
+|---|---:|---:|---:|
 | Logistic Regression | 0.83 | 0.76 | 0.58 |
 | Random Forest | 0.85 | 0.79 | 0.62 |
 
-✅ **Random Forest selected** as final model — better AUC and recall for churn detection.
+Based on these reported evaluation results, Random Forest was selected as the final model. It achieved a higher ROC-AUC, precision, and recall than Logistic Regression.
 
----
+The model can be used to generate churn-risk predictions for individual customers. These predictions can help prioritize customers for further analysis or retention efforts.
 
-## 💡 Business Recommendations
+## Business Recommendations
 
-**1. Convert month-to-month customers to annual contracts**
-Offer a 20% discount to high-risk month-to-month customers.
-Estimated impact: Could reduce overall churn rate by 10–15%.
+Based on the patterns identified in the analysis, I would focus on three areas:
 
-**2. Launch a 90-day onboarding program**
-New customers in the first 12 months need proactive engagement —
-check-in calls, tutorials, and service reviews.
+**1. Improve retention among month-to-month customers**
 
-**3. Incentivize auto-pay adoption**
-Electronic check users churn at 45%. Offering a small billing
-discount to switch to auto-pay could significantly reduce this.
+Test targeted offers or annual-plan discounts for customers showing signs of churn risk. The aim would be to encourage longer-term contracts without giving unnecessary discounts to customers who are likely to stay anyway.
 
----
+**2. Focus on the first year of the customer journey**
 
-## 🚀 How to Run
+Introduce follow-up calls, service reviews, and onboarding support during the first few months. This could help identify issues before customers decide to leave.
 
-**1. Clone the repo**
+**3. Review the electronic-check payment experience**
+
+Investigate whether billing problems, payment friction, or customer preferences contribute to the higher churn rate among electronic-check users. Where appropriate, encourage convenient alternatives such as automatic payments.
+
+These are proposed actions based on the observed patterns. Their actual impact would need to be tested using a controlled experiment or a suitable retention campaign.
+
+## How to Run the Project
+
+### 1. Clone the repository
+
 ```bash
-git clone https://github.com/yourusername/customer-churn-analysis.git
+git clone https://github.com/Rohithkumar-3/customer-churn-analysis.git
 cd customer-churn-analysis
 ```
 
-**2. Install dependencies**
+Replace the repository URL with the actual GitHub repository URL if the project has a different name.
+
+### 2. Install the dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
 
-**3. Run scripts in order**
+### 3. Run the analysis scripts
+
+Run the scripts from the project root directory:
+
 ```bash
-cd scripts
-python setup.py
-python datacleaning_eda.py
-python mlmodel.py
-python powerbi_export.py
+python scripts/setup.py
+python scripts/datacleaning_eda.py
+python scripts/model.py
+python scripts/powerbi_export.py
 ```
 
-**4. Open dashboard**
-Open `churn_dashboard.pbix` in Power BI Desktop.
+Run them in order so that the required data and output files are available to the later steps.
 
+### 4. Open the Power BI dashboard
 
-## 📬 Contact
+Open `Dashboard/churn_dashboard.pbix` using Power BI Desktop.
 
-Rohith Kumar V
-📧 mail.rohithkumar@gmail.com
-🔗 [LinkedIn](https://www.linkedin.com/in/rohith-kumar-rk/)
-💻 [GitHub](https://github.com/Rohithkumar-3)
+If the dashboard uses local CSV files, update the data source paths when prompted.
 
----
+## Dataset
 
-*Dataset: [Telco Customer Churn — Kaggle](https://www.kaggle.com/datasets/blastchar/telco-customer-churn)*
+This project uses the [Telco Customer Churn dataset on Kaggle](https://www.kaggle.com/datasets/blastchar/telco-customer-churn).
+
+The dataset contains customer information, service details, billing information, contract types, and churn status.
+
+## Contact
+
+**Rohith Kumar V**
+
+- Email: mail.rohithkumar@gmail.com
+- LinkedIn: https://www.linkedin.com/in/rohith-kumar-rk/
+- GitHub: https://github.com/Rohithkumar-3
